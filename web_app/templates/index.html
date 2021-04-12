@@ -15,9 +15,7 @@
     <div>
       <p>Running out of:</p>
 
-      <ul>
-        <li>Milk</li>
-        <li>Paper</li>
+      <ul id="list-running-out">
       </ul>
     </div>
 
@@ -57,11 +55,11 @@
           <table class="table table-sm">
             <tr>
               <th scope="row">Current Weight:</th>
-              <td><span class="">100</span>g</td>
+              <td><span name="weight">100</span>g</td>
             </tr>
             <tr>
               <th scope="row">Running out in:</th>
-              <td><span class="">3</span> day(s)</td>
+              <td><span name="prediction">-</span> day(s)</td>
             </tr>
             <tr>
               <th scope="row">Threshold:</th>
@@ -97,6 +95,8 @@
           $.ajax({
             url: "/weights",
             success: function (res) {
+              let runningOut = [];
+
               for (const [id, data] of Object.entries(res)) {
                 let weights = data["weights"];
 
@@ -116,9 +116,17 @@
                   dom.appendTo("#charts");
                 }
 
-                // Update value of fields if changed
                 let root = $("#" + id);
 
+                // Update width of chart based on time
+                if (weights.length > 0) {
+                  let diff = new Date(weights[weights.length-1]["timestamp"]) - new Date(weights[0]["timestamp"]);
+                  let length = diff / 1000;
+
+                  root.find(".chart-wrapper").css("width", (length > 300) ? length : "none");
+                }
+
+                // Update value of input fields if changed
                 for (let field of ["name", "threshold"]) {
                   let input = root.find(`input[name='${field}']`);
 
@@ -127,6 +135,19 @@
 
                   input.val(data[field]);
                 }
+
+                // Update current weight value
+                root.find("span[name='weight']").text((weights.length > 0) ? weights[weights.length-1]["weight"] : "-");
+
+                if (data["state"] == 0) runningOut.push(data["name"]);
+              }
+
+              // Update list of items that are running out
+              let list = $("#list-running-out");
+              list.empty();
+
+              for (let n of runningOut) {
+                list.append(`<li>${n}</li>`);
               }
             },
           });
@@ -152,6 +173,11 @@
               }]
             },
             options: {
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
               parsing: {
                 xAxisKey: "timestamp",
                 yAxisKey: "weight"
@@ -189,7 +215,7 @@
             method: "POST",
             data,
             success: function (res) {
-              console.log(res);
+              alert(res.message);
             },
           });
         }

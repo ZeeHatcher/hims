@@ -27,7 +27,11 @@ if __name__ == "__main__":
             cursor.execute("INSERT IGNORE INTO items (id, name) VALUES ('%s', '%s')" % (nuid, "Item Nil"))
             cursor.execute("INSERT INTO weights (item_id, weight) VALUES ('%s', %d)" % (nuid, weight))
 
+            # Update status of item if weight passed threshold
+            cursor.execute("UPDATE items SET state = IF(%s < threshold, 0, 1) WHERE id = '%s'" % (weight, nuid))
+
             db.commit()
             cursor.close()
 
         print("Insert into DB: (%s, %d)" % (nuid, weight))
+
