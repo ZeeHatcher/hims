@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!--Bootstrap CSS-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+  </head>
+
+  <body class="container">
+    <h1>HIMS</h1>
+
+    <div>
+      <p>Running out of:</p>
+
+      <ul>
+        <li>Milk</li>
+        <li>Paper</li>
+      </ul>
+    </div>
+
+    <hr>
+
+    <div class="container">
+      <div id="charts" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 gy-3">
+        
+      </div>
+    </div>
+
+    <div id="template" class="col">
+      <div class="card">
+        <div class="card-body">
+
+          <div class="card-title">
+            <div class="input-group">
+              <input name="name" type="text" class="form-control" placeholder="Item Name">
+              <div class="input-group-append">
+                <button name="submit-name" class="btn btn-outline-secondary" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                    <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-area">
+            <div class="chart-wrapper">
+              <canvas id="chart-placeholder"></canvas>
+            </div>
+          </div>
+
+          <hr>
+
+          <table class="table table-sm">
+            <tr>
+              <th scope="row">Current Weight:</th>
+              <td><span class="">100</span>g</td>
+            </tr>
+            <tr>
+              <th scope="row">Running out in:</th>
+              <td><span class="">3</span> day(s)</td>
+            </tr>
+            <tr>
+              <th scope="row">Threshold:</th>
+              <td>
+                <div class="input-group input-group-sm">
+                  <input name="threshold" type="number" class="form-control">
+                  <div class="input-group-append">
+                    <button name="submit-threshold" class="btn btn-sm btn-outline-secondary" type="button">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                        <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.2/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@next/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <script>
+      $(document).ready(function() {
+        let charts = {}
+
+        function getWeights() {
+          $.ajax({
+            url: "/weights",
+            success: function (res) {
+              for (const [id, data] of Object.entries(res)) {
+                let weights = data["weights"];
+
+                if (id in charts) {
+                  // Update data in existing charts
+                  let chart = charts[id];
+
+                  chart.data.datasets[0].data = weights;
+                  chart.update();
+                } else {
+                  // Append new chart to page
+                  let {dom, ctx} = cloneChartDOM();
+                  dom.attr("id", id);
+
+                  charts[id] = generateChart(ctx, weights);
+
+                  dom.appendTo("#charts");
+                }
+
+                // Update value of fields if changed
+                let root = $("#" + id);
+
+                for (let field of ["name", "threshold"]) {
+                  let input = root.find(`input[name='${field}']`);
+
+                  // Ignore focused fields
+                  if (input.is(":focus")) continue;
+
+                  input.val(data[field]);
+                }
+              }
+            },
+          });
+        }
+
+        function cloneChartDOM() {
+          let dom = $("#template").clone();
+          let ctx = dom.find("#chart-placeholder");
+
+          return {dom, ctx};
+        }
+
+        function generateChart(ctx, data) {
+          return new Chart(ctx, {
+            type: "line",
+            data: {
+              datasets: [{
+                data: data,
+                label: "weight",
+                backgroundColor: "rgba(32, 223, 128, 0.5)",
+                borderColor: "rgb(32, 223, 128)",
+                tension: 0.3
+              }]
+            },
+            options: {
+              parsing: {
+                xAxisKey: "timestamp",
+                yAxisKey: "weight"
+              },
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  type: "time",
+                }
+              }
+            }
+          });
+        }
+
+        function updateItem() {
+          // Get "root" element of chart and id
+          let root = $(this).parentsUntil("#charts", ".col");
+          let id = root.attr("id");
+
+          // Get name of field to be updated
+          let field = $(this).attr("name").substring(7);
+
+          // Get input for new field value
+          let value = root.find(`[name='${field}']`).val();
+
+          if (value.length == 0) {
+            return
+          }
+
+          data = { field, value };
+
+          $.ajax({
+            url: "/item/" + id,
+            method: "POST",
+            data,
+            success: function (res) {
+              console.log(res);
+            },
+          });
+        }
+
+        // Attach handlers to buttons
+        $(document).on("click", "[name^='submit']", updateItem);
+
+        // Refresh charts every 5 seconds
+        setInterval(getWeights, 5000);
+
+        getWeights();
+
+      });
+    </script>
+  </body>
+</html>

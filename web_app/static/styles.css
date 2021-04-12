@@ -1,0 +1,20 @@
+#template {
+  display: none;
+}
+
+tr {
+  border-style: hidden;
+}
+
+.chart-wrapper {
+  height: 200px;
+}
+
+.chart-area {
+  overflow-x: auto;
+}
+
+.bi {
+    display: inline-block;
+    vertical-align: -.15em;
+}
