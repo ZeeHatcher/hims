@@ -58,8 +58,8 @@
               <td><span name="weight">100</span>g</td>
             </tr>
             <tr>
-              <th scope="row">Running out in:</th>
-              <td><span name="prediction">-</span> day(s)</td>
+              <th scope="row">Usage Rate:</th>
+              <td><span name="rate">-</span>g</td>
             </tr>
             <tr>
               <th scope="row">Threshold:</th>
@@ -95,6 +95,8 @@
           $.ajax({
             url: "/weights",
             success: function (res) {
+              console.log(res);
+
               let runningOut = [];
 
               for (const [id, data] of Object.entries(res)) {
@@ -118,14 +120,6 @@
 
                 let root = $("#" + id);
 
-                // Update width of chart based on time
-                if (weights.length > 0) {
-                  let diff = new Date(weights[weights.length-1]["timestamp"]) - new Date(weights[0]["timestamp"]);
-                  let length = diff / 1000;
-
-                  root.find(".chart-wrapper").css("width", (length > 300) ? length : "none");
-                }
-
                 // Update value of input fields if changed
                 for (let field of ["name", "threshold"]) {
                   let input = root.find(`input[name='${field}']`);
@@ -138,6 +132,9 @@
 
                 // Update current weight value
                 root.find("span[name='weight']").text((weights.length > 0) ? weights[weights.length-1]["weight"] : "-");
+
+                // Update item usage rate value
+                root.find("span[name='rate']").text((data["rate"] != null) ? data["rate"] : "-");
 
                 if (data["state"] == 0) runningOut.push(data["name"]);
               }
