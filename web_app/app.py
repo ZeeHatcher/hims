@@ -1,4 +1,3 @@
-import serial
 import json
 import datetime
 import MySQLdb

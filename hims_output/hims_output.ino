@@ -42,6 +42,8 @@ void loop() {
       
       str = in;
     }
+    
+    lcd.clear();
   }
   
   lcd.setCursor(0, 0);
