@@ -17,7 +17,7 @@ const int SPEED = 300;
 const int PAUSE_TIME = 2000;
 
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
-String str;
+String str = "-";
 char c[COL + 1];
 
 void setup() {
