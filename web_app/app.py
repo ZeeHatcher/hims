@@ -72,19 +72,29 @@ def weights():
 
         # Rate of change in weight
         if is_begin_point:
+            # Calculate rate of weight decrease of previous section
             if mem[nuid]["begin_weight"] != None and mem[nuid]["end_weight"] != None and mem[nuid]["duration"] != None:
                 agg[nuid]["sum"] += (mem[nuid]["begin_weight"] - mem[nuid]["end_weight"]) / mem[nuid]["duration"]
                 agg[nuid]["count"] += 1
 
+            # Define new high point
             mem[nuid] = {
                 "begin_weight": weight,
                 "end_weight": None,
                 "duration": None
             }
         else:
+            # Update new low point
             mem[nuid]["end_weight"] = weight
             mem[nuid]["duration"] = delta
 
+    # Calculate rate of weight decrease of last section
+    for nuid in mem:
+        if mem[nuid]["begin_weight"] != None and mem[nuid]["end_weight"] != None and mem[nuid]["duration"] != None:
+            agg[nuid]["sum"] += (mem[nuid]["begin_weight"] - mem[nuid]["end_weight"]) / mem[nuid]["duration"]
+            agg[nuid]["count"] += 1
+
+    # Calculate average of all sections
     for nuid in agg:
         if agg[nuid]["count"] > 0:
             res[nuid]["rate"] = agg[nuid]["sum"] / agg[nuid]["count"]
